@@ -97,6 +97,9 @@ VkResult HeadlessWindow::CreateSurface(const encode::InstanceTable* table,
 {
     GFXRECON_UNREFERENCED_PARAMETER(flags);
 
+    pSurface = nullptr;
+    return VK_SUCCESS;
+
     if (table != nullptr)
     {
         VkHeadlessSurfaceCreateInfoEXT create_info{ VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT, nullptr, 0 };
@@ -109,7 +112,7 @@ VkResult HeadlessWindow::CreateSurface(const encode::InstanceTable* table,
 
 void HeadlessWindow::DestroySurface(const encode::InstanceTable* table, VkInstance instance, VkSurfaceKHR surface)
 {
-    if (table != nullptr)
+    if (table != nullptr && surface != nullptr)
     {
         table->DestroySurfaceKHR(instance, surface, nullptr);
     }

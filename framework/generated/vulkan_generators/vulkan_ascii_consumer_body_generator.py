@@ -98,8 +98,33 @@ class VulkanAsciiConsumerBodyGenerator(BaseGenerator):
             write(cmddef, file=self.outFile)
             first = False
 
+    def cppGetValue(self, value):
+        if self.isInputPointer(value):
+            return "*" + value.name + "->GetPointer()"
+        else:
+            return value.name
+
     #
     # Return VulkanAsciiConsumer class member function definition.
     def makeConsumerFuncBody(self, returnType, name, values):
         body = '    fprintf(GetFile(), "%s\\n", "' + name + '");\n'
+
+        for value in values:
+            body += '    fprintf(GetFile(), "\\t%s: ", "' + value.name + '");\n'
+            if self.isOutputParameter(value):
+                body += '    fprintf(GetFile(), "\\n");\n'
+                continue
+            if self.isEnum(value.baseType):
+                body += '    fprintf(GetFile(), "%d\\n", (int)' + self.cppGetValue(value) + ');\n'
+            elif self.isFlags(value.baseType):
+                body += '    fprintf(GetFile(), "0x%08x\\n", (int)' + self.cppGetValue(value) + ');\n'
+            elif self.isHandle(value.baseType):
+                body += '    fprintf(GetFile(), "0x%\" PRIx64 \" \\n", (uint64_t)' + self.cppGetValue(value) + ');\n'
+            elif self.isArrayLen(value.name, values):
+                body += '    fprintf(GetFile(), "%\" PRIu64 \" \\n", ' + self.cppGetValue(value) + ');\n'
+            elif value.baseType == 'uint32_t':
+                body += '    fprintf(GetFile(), "%u\\n", ' + self.cppGetValue(value) + ');\n'
+            else:
+                body += '    fprintf(GetFile(), "\\n");\n'
+
         return body

@@ -644,6 +644,7 @@ void VulkanReplayConsumerBase::ProcessSetSwapchainImageStateCommand(
     uint32_t                                            last_presented_image,
     const std::vector<format::SwapchainImageStateInfo>& image_info)
 {
+    return;
     const DeviceInfo* device_info    = object_info_table_.GetDeviceInfo(device_id);
     SwapchainKHRInfo* swapchain_info = object_info_table_.GetSwapchainKHRInfo(swapchain_id);
 
@@ -4957,6 +4958,8 @@ VulkanReplayConsumerBase::OverrideQueuePresentKHR(PFN_vkQueuePresentKHR         
 
         WriteScreenshots(meta_info);
     }
+
+    return result;
 
     // If rendering is restricted to a specific surface, need to check for dummy swapchains at present.
     if (options_.surface_index != -1)

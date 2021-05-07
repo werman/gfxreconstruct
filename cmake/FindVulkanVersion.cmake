@@ -3,6 +3,9 @@ set(VULKAN_VERSION_MAJOR "0")
 set(VULKAN_VERSION_MINOR "0")
 set(VULKAN_VERSION_PATCH "0")
 
+# HACK TO COMPILE NATIVE ANDROID EXECUTABLE
+return()
+
 # First, determine which header we need to grab the version information from.
 # Starting with Vulkan 1.1, we should use vulkan_core.h, but prior to that,
 # the information was in vulkan.h.
