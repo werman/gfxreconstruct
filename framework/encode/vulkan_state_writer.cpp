@@ -76,7 +76,7 @@ static bool IsImageReadable(VkMemoryPropertyFlags      property_flags,
                                                    (memory_wrapper->mapped_size == VK_WHOLE_SIZE)))));
 }
 
-VulkanStateWriter::VulkanStateWriter(util::FileOutputStream* output_stream,
+VulkanStateWriter::VulkanStateWriter(util::OutputStream*     output_stream,
                                      util::Compressor*       compressor,
                                      format::ThreadId        thread_id) :
     output_stream_(output_stream),

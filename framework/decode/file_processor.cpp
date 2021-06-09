@@ -33,6 +33,8 @@
 #include <cassert>
 #include <numeric>
 
+using asio::ip::tcp;
+
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
@@ -77,10 +79,33 @@ void FileProcessor::WaitDecodersIdle()
 bool FileProcessor::Initialize(const std::string& filename)
 {
     bool success = false;
+    int32_t result = 0;
 
-    int32_t result = util::platform::FileOpen(&file_descriptor_, filename.c_str(), "rb");
+    const auto separator = filename.find_last_of(':');
 
-    if ((result == 0) && (file_descriptor_ != nullptr))
+    if (separator != std::string::npos)
+    {
+        context_ = std::make_unique<asio::io_context>();
+
+        const auto host = filename.substr(0, separator);
+        const auto port = filename.substr(separator + 1);
+
+        tcp::acceptor acceptor(*context_, tcp::endpoint(tcp::v4(), std::stoi(port)));
+
+        socket_ = std::make_unique<asio::ip::tcp::socket>(*context_);
+
+        GFXRECON_LOG_INFO("Listening on port %s", port.c_str());
+
+        acceptor.accept(*socket_);
+
+        success = true;
+    }
+    else
+    {
+        result = util::platform::FileOpen(&file_descriptor_, filename.c_str(), "rb");
+    }
+
+    if ((result == 0) && (file_descriptor_ != nullptr || socket_))
     {
         success = ProcessFileHeader();
 
@@ -409,7 +434,7 @@ bool FileProcessor::ProcessBlocks()
             }
             else
             {
-                if (!feof(file_descriptor_))
+                if (file_descriptor_ && !feof(file_descriptor_))
                 {
                     // No data has been read for the current block, so we don't use 'HandleBlockReadError' here, as it
                     // assumes that the block header has been successfully read and will print an incomplete block at
@@ -485,14 +510,51 @@ bool FileProcessor::ReadCompressedParameterBuffer(size_t  compressed_buffer_size
 
 bool FileProcessor::ReadBytes(void* buffer, size_t buffer_size)
 {
-    size_t bytes_read = util::platform::FileRead(buffer, 1, buffer_size, file_descriptor_);
+    size_t bytes_read = 0;
+    if (file_descriptor_)
+    {
+        bytes_read = util::platform::FileRead(buffer, 1, buffer_size, file_descriptor_);
+    }
+    else
+    {
+        asio::error_code ec;
+        bytes_read = asio::read(*socket_, asio::buffer(buffer, buffer_size), asio::transfer_exactly(buffer_size), ec);
+        if (ec)
+        {
+            GFXRECON_LOG_ERROR("Error while reading: %s", ec.message().c_str());
+        }
+    }
+
     bytes_read_ += bytes_read;
     return (bytes_read == buffer_size);
 }
 
 bool FileProcessor::SkipBytes(size_t skip_size)
 {
-    bool success = util::platform::FileSeek(file_descriptor_, skip_size, util::platform::FileSeekCurrent);
+    bool success = false;
+
+    if (!file_descriptor_)
+    {
+        char buf[4096];
+        while (skip_size > 0) {
+            size_t to_skip = std::min((size_t)4096, skip_size);
+
+            asio::error_code ec;
+            asio::read(*socket_, asio::buffer(buf, 4096), asio::transfer_exactly(to_skip), ec);
+            if (ec)
+            {
+                GFXRECON_LOG_ERROR("Error while skipping bytes: %s", ec.message().c_str());
+            }
+
+            skip_size -= to_skip;
+        }
+
+        success = true;
+    }
+    else
+    {
+        success = util::platform::FileSeek(file_descriptor_, skip_size, util::platform::FileSeekCurrent);
+    }
 
     if (success)
     {
@@ -505,6 +567,12 @@ bool FileProcessor::SkipBytes(size_t skip_size)
 
 void FileProcessor::HandleBlockReadError(Error error_code, const char* error_message)
 {
+    if (file_descriptor_)
+    {
+        GFXRECON_LOG_WARNING("Network error");
+        return;
+    }
+
     // Report incomplete block at end of file as a warning, other I/O errors as an error.
     if (feof(file_descriptor_) && !ferror(file_descriptor_))
     {

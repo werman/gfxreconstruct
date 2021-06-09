@@ -31,6 +31,9 @@
 #include "util/compressor.h"
 #include "util/defines.h"
 
+#define ASIO_DISABLE_THREADS
+#include "asio.hpp"
+
 #include <algorithm>
 #include <cstdio>
 #include <string>
@@ -147,9 +150,13 @@ class FileProcessor
 
     bool IsFileHeaderValid() const { return (file_header_.fourcc == GFXRECON_FOURCC); }
 
-    bool IsFileValid() const { return (file_descriptor_ && !feof(file_descriptor_) && !ferror(file_descriptor_)); }
+    bool IsFileValid() const { return (socket_ || (file_descriptor_ && !feof(file_descriptor_) && !ferror(file_descriptor_))); }
 
   private:
+
+    std::unique_ptr<asio::io_context>      context_;
+    std::unique_ptr<asio::ip::tcp::socket> socket_;
+
     std::string                         filename_;
     format::FileHeader                  file_header_;
     std::vector<format::FileOptionPair> file_options_;

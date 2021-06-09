@@ -37,6 +37,7 @@
 #include "util/logging.h"
 #include "util/page_guard_manager.h"
 #include "util/platform.h"
+#include "util/network_output_stream.h"
 
 #include <cassert>
 #include <unordered_set>
@@ -85,7 +86,7 @@ void VulkanCaptureManager::DestroyInstance()
     CaptureManager::DestroyInstance([]() -> const CaptureManager* { return instance_; });
 }
 
-void VulkanCaptureManager::WriteTrackedState(util::FileOutputStream* file_stream, format::ThreadId thread_id)
+void VulkanCaptureManager::WriteTrackedState(util::OutputStream* file_stream, format::ThreadId thread_id)
 {
     VulkanStateWriter state_writer(file_stream, compressor_.get(), thread_id);
     uint64_t          n_blocks = state_tracker_->WriteState(&state_writer, GetCurrentFrame());

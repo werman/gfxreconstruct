@@ -233,7 +233,7 @@ class CaptureManager
 
     virtual void CreateStateTracker()                                                               = 0;
     virtual void DestroyStateTracker()                                                              = 0;
-    virtual void WriteTrackedState(util::FileOutputStream* file_stream, format::ThreadId thread_id) = 0;
+    virtual void WriteTrackedState(util::OutputStream* file_stream, format::ThreadId thread_id) = 0;
 
     ThreadData* GetThreadData()
     {
@@ -325,7 +325,7 @@ class CaptureManager
 
     const format::ApiFamilyId api_family_;
 
-    std::unique_ptr<util::FileOutputStream> file_stream_;
+    std::unique_ptr<util::OutputStream>     file_stream_;
     format::EnabledOptions                  file_options_;
     std::string                             base_filename_;
     bool                                    timestamp_filename_;

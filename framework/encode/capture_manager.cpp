@@ -36,6 +36,7 @@
 #include "util/logging.h"
 #include "util/page_guard_manager.h"
 #include "util/platform.h"
+#include "util/network_output_stream.h"
 
 #include <cassert>
 #include <unordered_map>
@@ -383,7 +384,14 @@ bool CaptureManager::Initialize(std::string base_filename, const CaptureSettings
                 capture_mode_         = kModeWriteAndTrack;
                 trim_key_first_frame_ = current_frame_;
 
-                success = CreateCaptureFile(util::filepath::InsertFilenamePostfix(base_filename_, "_trim_trigger"));
+                if (base_filename_.find(":") != std::string::npos)
+                {
+                    success = CreateCaptureFile(base_filename_);
+                }
+                else
+                {
+                    success = CreateCaptureFile(util::filepath::InsertFilenamePostfix(base_filename_, "_trim_trigger"));
+                }
             }
             else
             {
@@ -687,7 +695,16 @@ void CaptureManager::CheckStartCaptureForTrackMode(uint32_t current_boundary_cou
     }
     else if (IsTrimHotkeyPressed() || RuntimeTriggerEnabled())
     {
-        bool success = CreateCaptureFile(util::filepath::InsertFilenamePostfix(base_filename_, "_trim_trigger"));
+        bool success = false;
+        if (base_filename_.find(":") != std::string::npos)
+        {
+            success = CreateCaptureFile(base_filename_);
+        }
+        else
+        {
+            success = CreateCaptureFile(util::filepath::InsertFilenamePostfix(base_filename_, "_trim_trigger"));
+        }
+
         if (success)
         {
 
@@ -845,12 +862,21 @@ bool CaptureManager::CreateCaptureFile(const std::string& base_filename)
     bool        success          = true;
     std::string capture_filename = base_filename;
 
-    if (timestamp_filename_)
+    bool is_network = capture_filename.find(":") != std::string::npos;
+
+    if (!is_network && timestamp_filename_)
     {
         capture_filename = util::filepath::GenerateTimestampedFilename(capture_filename);
     }
 
-    file_stream_ = std::make_unique<util::FileOutputStream>(capture_filename, kFileStreamBufferSize);
+    if (is_network)
+    {
+        file_stream_ = std::make_unique<util::NetworkOutputStream>(capture_filename);
+    }
+    else
+    {
+        file_stream_ = std::make_unique<util::FileOutputStream>(capture_filename, kFileStreamBufferSize);
+    }
 
     if (file_stream_->IsValid())
     {

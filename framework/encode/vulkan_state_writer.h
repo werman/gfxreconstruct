@@ -47,7 +47,7 @@ GFXRECON_BEGIN_NAMESPACE(encode)
 class VulkanStateWriter
 {
   public:
-    VulkanStateWriter(util::FileOutputStream* output_stream, util::Compressor* compressor, format::ThreadId thread_id);
+    VulkanStateWriter(util::OutputStream* output_stream, util::Compressor* compressor, format::ThreadId thread_id);
 
     ~VulkanStateWriter();
 
@@ -334,7 +334,7 @@ class VulkanStateWriter
     void WriteTlasToBlasDependenciesMetadata(const VulkanStateTable& state_table);
 
   private:
-    util::FileOutputStream*  output_stream_;
+    util::OutputStream*      output_stream_;
     util::Compressor*        compressor_;
     std::vector<uint8_t>     compressed_parameter_buffer_;
     format::ThreadId         thread_id_;

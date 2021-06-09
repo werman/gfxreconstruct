@@ -62,6 +62,8 @@ target_sources(gfxrecon_util
                     ${CMAKE_CURRENT_LIST_DIR}/memory_output_stream.cpp
                     ${CMAKE_CURRENT_LIST_DIR}/monotonic_allocator.h
                     ${CMAKE_CURRENT_LIST_DIR}/monotonic_allocator.cpp
+                    ${CMAKE_CURRENT_LIST_DIR}/network_output_stream.h
+                    ${CMAKE_CURRENT_LIST_DIR}/network_output_stream.cpp
                     ${CMAKE_CURRENT_LIST_DIR}/output_stream.h
                     ${CMAKE_CURRENT_LIST_DIR}/page_guard_manager.h
                     ${CMAKE_CURRENT_LIST_DIR}/page_guard_manager.cpp
@@ -114,7 +116,8 @@ target_sources(gfxrecon_util
 target_include_directories(gfxrecon_util
                            PUBLIC
                                ${CMAKE_SOURCE_DIR}/framework
-                               $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_SOURCE_DIR}/external/AgilitySDK/inc>)
+                               $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_SOURCE_DIR}/external/AgilitySDK/inc>
+                               ${CMAKE_SOURCE_DIR}/external/asio/asio/include/)
 target_link_libraries(gfxrecon_util platform_specific vulkan_registry nlohmann_json::nlohmann_json ${CMAKE_DL_LIBS})
 target_link_libraries(gfxrecon_util $<$<BOOL:${WIN32}>:version.lib>)
 

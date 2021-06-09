@@ -28,6 +28,8 @@ target_sources(gfxrecon_util
                    ${GFXRECON_SOURCE_DIR}/framework/util/memory_output_stream.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/util/monotonic_allocator.h
                    ${GFXRECON_SOURCE_DIR}/framework/util/monotonic_allocator.cpp
+                   ${GFXRECON_SOURCE_DIR}/framework/util/network_output_stream.h
+                   ${GFXRECON_SOURCE_DIR}/framework/util/network_output_stream.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/util/output_stream.h
                    ${GFXRECON_SOURCE_DIR}/framework/util/page_guard_manager.h
                    ${GFXRECON_SOURCE_DIR}/framework/util/page_guard_manager.cpp
@@ -56,7 +58,8 @@ target_include_directories(gfxrecon_util
                            PUBLIC
                                ${GFXRECON_SOURCE_DIR}/external/precompiled/android/include
                                ${GFXRECON_SOURCE_DIR}/external/stb
-                               ${GFXRECON_SOURCE_DIR}/framework)
+                               ${GFXRECON_SOURCE_DIR}/framework
+                               ${GFXRECON_SOURCE_DIR}/external/asio/asio/include/)
 
 target_link_libraries(gfxrecon_util
                           platform_specific

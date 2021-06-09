@@ -1256,7 +1256,7 @@ class VulkanCaptureManager : public CaptureManager
 
     virtual void DestroyStateTracker() override { state_tracker_ = nullptr; }
 
-    virtual void WriteTrackedState(util::FileOutputStream* file_stream, format::ThreadId thread_id) override;
+    virtual void WriteTrackedState(util::OutputStream* file_stream, format::ThreadId thread_id) override;
 
   private:
     struct HardwareBufferInfo
