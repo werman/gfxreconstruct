@@ -312,7 +312,15 @@ void VulkanRebindAllocator::DestroyBuffer(VkBuffer                     buffer,
                                           ResourceData                 allocator_data)
 {
     GFXRECON_UNREFERENCED_PARAMETER(allocation_callbacks);
-    GFXRECON_ASSERT(buffer != VK_NULL_HANDLE);
+
+    if (buffer == VK_NULL_HANDLE)
+    {
+        if (allocator_data != 0)
+        {
+            delete reinterpret_cast<ResourceAllocInfo*>(allocator_data);
+        }
+        return;
+    }
 
     if (allocator_data != 0)
     {
@@ -364,7 +372,15 @@ void VulkanRebindAllocator::DestroyImage(VkImage                      image,
                                          ResourceData                 allocator_data)
 {
     GFXRECON_UNREFERENCED_PARAMETER(allocation_callbacks);
-    GFXRECON_ASSERT(image != VK_NULL_HANDLE);
+
+    if (image == VK_NULL_HANDLE)
+    {
+        if (allocator_data != 0)
+        {
+            delete reinterpret_cast<ResourceAllocInfo*>(allocator_data);
+        }
+        return;
+    }
 
     if (allocator_data != 0)
     {
