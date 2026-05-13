@@ -127,7 +127,9 @@ LayoutInfo compute_type_layout(const SpvReflectTypeDescription* type_description
 static bool check_type_potential_ref(const SpvReflectTypeDescription* td)
 {
     return td->storage_class == spv::StorageClassPhysicalStorageBuffer ||
-           (td->op == SpvOpTypeInt && td->traits.numeric.scalar.width == 64 && !td->traits.numeric.scalar.signedness);
+           (td->op == SpvOpTypeInt && td->traits.numeric.scalar.width == 64 && !td->traits.numeric.scalar.signedness) ||
+           (td->op == SpvOpTypeVector && td->traits.numeric.vector.component_count == 2 &&
+            td->traits.numeric.scalar.width == 32 && !td->traits.numeric.scalar.signedness);
 }
 
 // Instruction represents a single Spv::Op instruction.
@@ -323,6 +325,15 @@ bool SpirVParsingUtil::ParseBufferReferences(const uint32_t* const spirv_code, s
     }
     instructions.shrink_to_fit();
 
+    for (const Instruction& insn : instructions)
+    {
+        const uint32_t result_id = insn.resultId();
+        if (result_id != 0)
+        {
+            definitions_[result_id] = &insn;
+        }
+    }
+
     if (spv_shader_module == std::nullopt)
     {
         // spirv-reflect parsing only on-demand
@@ -340,6 +351,31 @@ bool SpirVParsingUtil::ParseBufferReferences(const uint32_t* const spirv_code, s
                                               BufferReferenceLocation          source,
                                               uint32_t                         set,
                                               uint32_t                         binding) {
+            auto is_type_id_potential_ref = [this](uint32_t type_id) {
+                const Instruction* type_insn = FindDef(type_id);
+                if (type_insn == nullptr)
+                {
+                    return false;
+                }
+
+                switch (type_insn->opcode())
+                {
+                    case spv::OpTypeInt:
+                        return type_insn->operand(0) == 64 && !type_insn->operand(1);
+                    case spv::OpTypeVector:
+                    {
+                        const Instruction* component_type_insn = FindDef(type_insn->operand(0));
+                        return type_insn->operand(1) == 2 && component_type_insn != nullptr &&
+                               component_type_insn->opcode() == spv::OpTypeInt &&
+                               component_type_insn->operand(0) == 32 && !component_type_insn->operand(1);
+                    }
+                    case spv::OpTypePointer:
+                        return type_insn->operand(0) == spv::StorageClassPhysicalStorageBuffer;
+                    default:
+                        return false;
+                }
+            };
+
             struct queue_item_t
             {
                 const SpvReflectTypeDescription* type_description = nullptr;
@@ -369,6 +405,11 @@ bool SpirVParsingUtil::ParseBufferReferences(const uint32_t* const spirv_code, s
                     if (td->op == SpvOpTypeArray || td->op == SpvOpTypeRuntimeArray)
                     {
                         stride = td->traits.array.stride;
+                        if (const Instruction* type_insn = FindDef(td->id))
+                        {
+                            GFXRECON_ASSERT(type_insn->num_operands() > 0);
+                            is_potential_ref = is_potential_ref || is_type_id_potential_ref(type_insn->operand(0));
+                        }
                     }
 
                     if (is_potential_ref)
